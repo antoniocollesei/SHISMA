@@ -1,0 +1,24 @@
+name: timeseries_dl
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+dependencies:
+  - python<3.13.0
+  - pytorch
+  - torchvision
+  - torchaudio
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - pandas
+  - pyts
+  - lightgbm
+  - pip
+  - pip:
+    - hydra-zen
+    - tslearn
+    - "sktime[all-extras]"
+    - "git+https://github.com/aeon-toolkit/aeon.git#egg=aeon[all-extras]"
+    - notebook
