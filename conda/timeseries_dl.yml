@@ -21,4 +21,5 @@ dependencies:
     - tslearn
     - "sktime[all-extras]"
     - "git+https://github.com/aeon-toolkit/aeon.git#egg=aeon[all-extras]"
+    - 
     - notebook
