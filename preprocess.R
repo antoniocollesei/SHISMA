@@ -1,5 +1,8 @@
 library(tidyverse)
 
+# create folder with output files, if not exists
+dir.create("data_ready", showWarnings = FALSE)
+
 d0_obj <- readRDS("rds/d0.rds")
 d1_obj <- readRDS("rds/d1.rds")
 d2_obj <- readRDS("rds/d2.rds")
@@ -14,37 +17,37 @@ for (seurat_obj in list_seurat_obj) {
 
   # create dataframe from tmp_obj
   tmp_df <- as.data.frame(tmp_obj@assays$RNA$scale.data)
-  colnames(tmp_df) <- tmp_obj$cell_type
 
-  # group by identical colnames and mean expression
-  tmp_df$rowname <- rownames(tmp_df)
-
-  tmp_df_long <- tmp_df %>%
-    pivot_longer(cols = -rowname, names_to = "colname", values_to = "value")
-
-  tmp_df_mean <- tmp_df_long %>%
-    group_by(rowname, colname) %>%
-    summarise(mean_value = mean(value), .groups = "drop")
-
-  # paste together rowname and colname into new column
-  tmp_df_mean$gene_cell_type <- paste(
-    tmp_df_mean$rowname,
-    tmp_df_mean$colname,
-    sep = "_"
+  colnames(tmp_df) <- paste0(
+    substr(colnames(tmp_obj), 1, 2),
+    "_",
+    tmp_obj$cell_type
   )
 
-  # remove spaces from gene_cell_type
-  tmp_df_mean$gene_cell_type <- gsub(" ", "_", tmp_df_mean$gene_cell_type)
+  tmp_df_mean <- t(apply(tmp_df, 1, function(x) tapply(x, colnames(tmp_df), mean))) %>% as.data.frame()
 
-  # remove rowname and colname
-  tmp_df_mean <- tmp_df_mean %>%
-    select(gene_cell_type, mean_value)
+  # group by identical colnames and mean expression
+  tmp_df_mean <- rownames_to_column(tmp_df_mean, var = "gene")
 
-  # append to dataframe by joining with gene_cell_type
+  tmp_df_long <- tmp_df_mean %>%
+    pivot_longer(cols = -gene, names_to = "colname", values_to = "value")
+
+  # paste together gene and colname into new column
+  tmp_df_long$gene_patient_celltype <- paste(
+    tmp_df_long$gene,
+    tmp_df_long$colname,
+    sep = "_"
+  ) %>% gsub(" ", "", .)
+
+  # remove gene and colname
+  tmp_df_long <- tmp_df_long %>%
+    select(gene_patient_celltype, value)
+
+  # append to dataframe by joining with gene_patient_celltype
   if (seurat_obj == "d0_obj") {
-    final_df <- tmp_df_mean
+    final_df <- tmp_df_long
   } else {
-    final_df <- full_join(final_df, tmp_df_mean, by = "gene_cell_type")
+    final_df <- full_join(final_df, tmp_df_long, by = "gene_patient_celltype")
   }
 
   # print progress
@@ -54,13 +57,15 @@ for (seurat_obj in list_seurat_obj) {
 # get only what's before the first underscore of list_seurat_obj
 list_seurat_obj <- gsub("_.*", "", list_seurat_obj)
 
-colnames(final_df) <- c("gene_cell_type", list_seurat_obj)
+colnames(final_df) <- c("gene_patient_celltype", list_seurat_obj)
 
 final_df <- final_df %>%
-  select(gene_cell_type, d0, d1, d2, d5, d9, d15)
+  select(gene_patient_celltype, d0, d1, d2, d5, d9, d15)
+
+final_df <- final_df[complete.cases(final_df), ]
 
 # remove tmp objects
 rm(tmp_df, tmp_df_long, tmp_df_mean, tmp_obj)
 
 # write final_df to csv
-write.csv(final_df, "temporal_data_ready_normalized.csv", row.names = FALSE)
+write.csv(final_df, "temporal_data_with_patient_ready_normalized.csv", row.names = FALSE)
