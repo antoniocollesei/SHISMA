@@ -50,4 +50,4 @@ for i in range(len(array_2d)):
 # sort distance_df by distance
 distance_df = distance_df.sort_values(by='distance', ascending=True)
 
-distance_df.to_csv('distance_df.csv', index=False)
+distance_df.to_csv('tests/distance_df.csv', index=False)
