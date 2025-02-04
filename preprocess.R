@@ -1,3 +1,5 @@
+# R version: 4.4.2
+
 library(tidyverse)
 
 # create folder with output files, if not exists
@@ -16,7 +18,7 @@ for (seurat_obj in list_seurat_obj) {
   tmp_obj <- get(seurat_obj)
 
   # create dataframe from tmp_obj
-  tmp_df <- as.data.frame(tmp_obj@assays$RNA$scale.data)
+  tmp_df <- as.data.frame(tmp_obj@assays$RNA$data)
 
   colnames(tmp_df) <- paste0(
     substr(colnames(tmp_obj), 1, 2),
@@ -62,10 +64,13 @@ colnames(final_df) <- c("gene_patient_celltype", list_seurat_obj)
 final_df <- final_df %>%
   select(gene_patient_celltype, d0, d1, d2, d5, d9, d15)
 
-final_df <- final_df[complete.cases(final_df), ]
+final_df[is.na(final_df)] <- 0
+
+# keep everything before underscore
+gsub("_.*", "", final_df$gene_patient_celltype) %>% unique()
 
 # remove tmp objects
 rm(tmp_df, tmp_df_long, tmp_df_mean, tmp_obj)
 
 # write final_df to csv
-write.csv(final_df, "temporal_data_with_patient_ready_normalized.csv", row.names = FALSE)
+write.csv(final_df, "temporal_data_with_patient_ready_normalized_full_genes.csv", row.names = FALSE)
