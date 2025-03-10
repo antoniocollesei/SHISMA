@@ -1,0 +1,20 @@
+name: genelets
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - scipy
+  - networkx
+  - h5py
+  - matplotlib
+  - scikit-learn
+  - pandas
+  - joblib
+  - seaborn
+  - ipython
+  - pip
+  - pip:
+      - fasttreeshap
+      - git+https://github.com/fspinna/borf.git@xai-improvements
