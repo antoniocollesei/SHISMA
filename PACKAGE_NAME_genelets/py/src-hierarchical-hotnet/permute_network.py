@@ -36,7 +36,7 @@ def run(args):
         # If G is not connected, then we perform the connected double edge swap algorithm on a
         # largest connected component of G.
         if not nx.is_connected(G):
-            G = max(nx.connected_component_subgraphs(G), key=len)
+            G = G.subgraph(max(nx.connected_components(G), key=len)).copy()
 
         # The current connected double edge swap algorithm does not guarantee a minimum number of
         # successful edge swaps, so we enforce it.

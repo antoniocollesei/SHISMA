@@ -18,15 +18,15 @@ mkdir -p $intermediate
 mkdir -p $results
 
 # Set the correct Python path from your virtual environment
-#python py/make_penalized_shap.py --time_series "$1" --ppi "$2" --cell_type "$3"
+python py/make_penalized_shap.py --time_series "$1" --ppi "$2" --cell_type "$3"
 
 num_permutations=100
-num_cores=5
+num_cores=30
 
 # Compile Fortran module.
-cd py/py/src-hierarchical-hotnet
-f2py -c fortran_module.f95 -m fortran_module > /dev/null
-cd ../..
+#cd py/src-hierarchical-hotnet
+#f2py -c fortran_module.f95 -m fortran_module > /dev/null
+#cd ../..
 
 ################################################################################
 #   Prepare data.
@@ -86,8 +86,8 @@ do
 
     python py/src-hierarchical-hotnet/find_permutation_bins.py \
         -gsf $intermediate/"$network"_"$score_file"/scores_0.tsv \
-        -igf $data/"$network"_index_gene.tsv \
-        -elf $data/"$network"_edge_list.tsv \
+        -igf $PWD/data/"$network"_index_gene.tsv \
+        -elf $PWD/data/"$network"_edge_list.tsv \
         -ms  1000 \
         -o   $intermediate/"$network"_"$score_file"/score_bins.tsv
 
@@ -111,7 +111,7 @@ do
     parallel -u -j $num_cores --bar \
         python py/src-hierarchical-hotnet/construct_hierarchy.py \
             -smf  $intermediate/"$network"/similarity_matrix.h5 \
-            -igf  $data/"$network"_index_gene.tsv \
+            -igf  $PWD/data/"$network"_index_gene.tsv \
             -gsf  $intermediate/"$network"_"$score_file"/scores_{}.tsv \
             -helf $intermediate/"$network"_"$score_file"/hierarchy_edge_list_{}.tsv \
             -higf $intermediate/"$network"_"$score_file"/hierarchy_index_gene_{}.tsv \
@@ -146,8 +146,8 @@ echo "Performing consensus..."
 
 python py/src-hierarchical-hotnet/perform_consensus.py \
     -cf  $(for score_file in "${score_files[@]}"; do echo "$results/clusters_"$network"_"$score_file".tsv"; done) \
-    -igf $(for score_file in "${score_files[@]}"; do echo "$data/"$network"_index_gene.tsv"; done) \
-    -elf $(for score_file in "${score_files[@]}"; do echo "$data/"$network"_edge_list.tsv"; done) \
+    -igf $(for score_file in "${score_files[@]}"; do echo "$PWD/data/"$network"_index_gene.tsv"; done) \
+    -elf $(for score_file in "${score_files[@]}"; do echo "$PWD/data/"$network"_edge_list.tsv"; done) \
     -n   $(for score_file in "${score_files[@]}"; do echo "$network"; done) \
     -s   $(for score_file in "${score_files[@]}"; do echo "$score_file"; done) \
     -t   2 \

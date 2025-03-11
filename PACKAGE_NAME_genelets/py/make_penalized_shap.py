@@ -85,11 +85,11 @@ for i in range(len(shap_values_pval_penalized)):
     row.T.to_csv(f"data/shapelet_data/scores_{i}.tsv", header=False, sep="\t")
 
 # Create a gene-index file
-gene2index = pd.Series(index=genes, data=range(1, len(genes) + 1))
+gene2index = pd.Series(index=genes, data=range(len(genes)))
 
 # Load edges
 edges = pd.read_csv(args.ppi, sep="\t")
-network_name = str(args.ppi).rsplit('.', 1)[0]
+network_name = os.path.splitext(os.path.basename(args.ppi))[0]
 
 # Keep edges that are in genes
 edges = edges[edges['node1'].isin(genes) & edges['node2'].isin(genes)]
@@ -99,9 +99,10 @@ edges['node1'] = edges['node1'].map(gene2index)
 edges['node2'] = edges['node2'].map(gene2index)
 
 # Print to csv only node1, node2
-edges[['node1', 'node2']].to_csv("data/" + network_name + "_edge_list.tsv", header=False, sep="\t", index=False)
+edge_list = edges[['node1', 'node2']]
+edge_list.to_csv(f"data/{network_name}_edge_list.tsv", header=False, sep="\t", index=False)
 
-index2gene = pd.Series(data=genes, index=range(1, len(genes) + 1))
-index2gene.to_csv("data/" + network_name + "_index_gene.tsv", header=False, sep="\t")
+index2gene = pd.Series(data=genes, index=range(len(genes)))
+index2gene.to_csv(f"data/{network_name}_index_gene.tsv", header=False, sep="\t")
 
 print("Processing complete.")

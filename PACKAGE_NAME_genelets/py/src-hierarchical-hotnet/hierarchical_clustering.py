@@ -186,7 +186,7 @@ def strongly_connected_components_from_adjacency_matrix(A):
 
     index = -np.ones(n, dtype=np.int64)  # Changed np.int to np.int64
     lowlink = -np.ones(n, dtype=np.int64)  # Changed np.int to np.int64
-    found = np.zeros(n, dtype=np.bool)
+    found = np.zeros(n, dtype=bool)
     queue = np.zeros(n, dtype=np.int64)  # Changed np.int to np.int64
     subqueue = np.zeros(n, dtype=np.int64)  # Changed np.int to np.int64
     component = np.zeros(n, dtype=np.int64)  # Changed np.int to np.int64
