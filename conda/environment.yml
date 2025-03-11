@@ -15,6 +15,6 @@ dependencies:
   - seaborn
   - ipython
   - pip
+  - fasttreeshap
   - pip:
-      - fasttreeshap
       - git+https://github.com/fspinna/borf.git@xai-improvements
