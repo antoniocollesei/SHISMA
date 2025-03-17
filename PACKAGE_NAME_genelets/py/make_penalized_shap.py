@@ -30,7 +30,7 @@ data_avg["gene_celltype"] = data_avg["gene"] + "_" + data_avg["celltype"]
 data_avg = data_avg.set_index("gene_celltype").drop(columns=["gene", "celltype"])
 
 ppi_genes = pd.read_csv(args.ppi, sep="\t")
-ppi_genes = pd.concat([ppi_genes["node1"], ppi_genes["node2"]]).unique()
+ppi_genes = pd.concat([ppi_genes["gene1"], ppi_genes["gene2"]]).unique()
 data = data_avg.loc[data_avg.index.str.split('_').str[0].isin(ppi_genes)]
 
 # Encoding
@@ -56,21 +56,87 @@ shap_values = shap_explainer(X_transformed.toarray()[cell_type_indexes], check_a
 average = np.mean(abs(shap_values), axis=0)
 average_df = pd.DataFrame(average, columns=enc_genes.classes_.astype(str))
 
-# Permutation testing
-num_permutations, num_jobs = 10, -1
+num_permutations, num_jobs = 1000, -1
 X_transformed_arr = X_transformed.toarray()[cell_type_indexes]
 
-def compute_permutation(i):
+penalization_method = 'Westfall-Young'  # 'permutation' or 'maxT' or 'Westfall-Young'
+
+# Permutation testing
+if penalization_method == 'permutation':
+  
+  def compute_permutation(i):
     y_genes_perm = np.random.permutation(y_genes)
     model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
-    shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=-1)
+    shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_jobs)
     shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
     return np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
 
-average_perm_list = np.array(Parallel(n_jobs=num_jobs)(delayed(compute_permutation)(i) for i in range(num_permutations)))
-p_values = pd.DataFrame(np.mean(average_perm_list >= average, axis=0))
-shap_values_pval_penalized = abs(average * (pd.DataFrame(1-p_values)))
-shap_values_pval_penalized.columns = enc_genes.classes_.astype(str)
+  average_perm_list = np.array(Parallel(n_jobs=num_jobs)(delayed(compute_permutation)(i) for i in range(num_permutations)))
+  p_values = pd.DataFrame(np.mean(average_perm_list >= average, axis=0))
+  shap_values_pval_penalized = abs(average * (pd.DataFrame(1-p_values)))
+  shap_values_pval_penalized.columns = enc_genes.classes_.astype(str)
+
+elif penalization_method == 'maxT':
+    def compute_permutation(i):
+        y_genes_perm = np.random.permutation(y_genes)
+        model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
+        shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_jobs)
+        shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
+        shap_importance = np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
+        return shap_importance, np.max(shap_importance, axis=0)
+
+    perm_results = Parallel(n_jobs=num_jobs)(
+        delayed(compute_permutation)(i) for i in range(num_permutations))
+
+    average_perm_list = np.array([res[0] for res in perm_results])
+    max_perm_distribution = np.array([res[1] for res in perm_results])
+
+    # Compute Max-T corrected p-values
+    p_values_corrected = np.mean(max_perm_distribution[:, None] >= average, axis=0)
+
+    # Convert both to DataFrames for shape alignment
+    p_values_corrected_df = pd.DataFrame(1 - p_values_corrected, index=average_df.index, columns=average_df.columns)
+
+    # Compute penalized SHAP values
+    shap_values_pval_penalized = abs(average_df * p_values_corrected_df)
+
+elif penalization_method == 'Westfall-Young':
+  def compute_permutation(i):
+        y_genes_perm = np.random.permutation(y_genes)
+        model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
+        shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_jobs)
+        shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
+        shap_importance = np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
+        return shap_importance, np.max(shap_importance, axis=0)
+
+  perm_results = Parallel(n_jobs=num_jobs)(
+    delayed(compute_permutation)(i) for i in range(num_permutations))
+
+  average_perm_list = np.array([res[0] for res in perm_results])
+  max_perm_distribution = np.array([res[1] for res in perm_results])
+
+  def compute_westfall_young_pvalues(average, average_perm_list):
+      num_permutations = average_perm_list.shape[0]
+      p_values_adjusted = np.zeros(average.shape)
+
+      for i in range(average.shape[0]):  # Loop over each feature
+        for j in range(average.shape[1]):
+            observed = average[i, j]
+            permuted_values = average_perm_list[:, i, j]
+            
+            # Compute adjusted p-value using min-P step-down
+            p_values_adjusted[i, j] = np.sum(permuted_values >= observed) / num_permutations
+
+      return p_values_adjusted
+
+  # Compute Westfall-Young adjusted p-values
+  p_values_corrected = compute_westfall_young_pvalues(average, average_perm_list)
+
+  # Convert to DataFrame
+  p_values_corrected_df = pd.DataFrame(1 - p_values_corrected, index=average_df.index, columns=average_df.columns)
+
+  # Compute penalized SHAP values
+  shap_values_pval_penalized = abs(average_df * p_values_corrected_df)
 
 os.makedirs("data", exist_ok=True)
 shap_values_pval_penalized.to_csv(f"data/shap_values_{args.cell_type}_pvalpenalized.csv", index=False)
@@ -92,14 +158,14 @@ edges = pd.read_csv(args.ppi, sep="\t")
 network_name = os.path.splitext(os.path.basename(args.ppi))[0]
 
 # Keep edges that are in genes
-edges = edges[edges['node1'].isin(genes) & edges['node2'].isin(genes)]
+edges = edges[edges['gene1'].isin(genes) & edges['gene2'].isin(genes)]
 
 # Map genes to indexes
-edges['node1'] = edges['node1'].map(gene2index)
-edges['node2'] = edges['node2'].map(gene2index)
+edges['gene1'] = edges['gene1'].map(gene2index)
+edges['gene2'] = edges['gene2'].map(gene2index)
 
-# Print to csv only node1, node2
-edge_list = edges[['node1', 'node2']]
+# Print to csv only gene1, gene2
+edge_list = edges[['gene1', 'gene2']]
 edge_list.to_csv(f"data/{network_name}_edge_list.tsv", header=False, sep="\t", index=False)
 
 index2gene = pd.Series(data=genes, index=range(len(genes)))
