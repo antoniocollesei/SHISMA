@@ -1,38 +1,51 @@
 #!/bin/bash
+# Usage: ./wrapper.sh --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> --nperm <num_permutations> --cores <num_cores>
 
-# Usage: ./wrapper.sh <time_series_file> <ppi_file> <cell_type> <output_folder>
+# Set default values
+default_num_permutations=100
+default_num_cores=16
 
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <time_series_file> <ppi_file> <cell_type>"
-    exit 1
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --data) time_series_file="$2"; shift 2 ;;
+    --ppi) ppi_file="$2"; shift 2 ;;
+    --ct) cell_type="$2"; shift 2 ;;
+    --out) output_name="$2"; shift 2 ;;
+    --nperm) num_permutations="$2"; shift 2 ;;
+    --cores) num_cores="$2"; shift 2 ;;
+    *) echo "Unknown parameter passed: $1"; exit 1 ;;
+  esac
+done
+
+# Apply default values if not provided
+num_permutations="${num_permutations:-$default_num_permutations}"
+num_cores="${num_cores:-$default_num_cores}"
+
+if [[ -z "$time_series_file" || -z "$ppi_file" || -z "$cell_type" || -z "$output_name" ]]; then
+  echo "Usage: $0 --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm <num_permutations>] [--cores <num_cores>]"
+  exit 1
 fi
 
 start_time=$(date +%s)
 
-data=$PWD/data/shapelet_data
-intermediate=$PWD/data/shapelet_intermediate
-results=$PWD/data/shapelet_results
+output_folder=analysis_"$output_name"
+data=$PWD/"$output_folder"/shapelet_data
+intermediate=$PWD/"$output_folder"/shapelet_intermediate
+results=$PWD/"$output_folder"/shapelet_results
 
+mkdir -p $output_folder
 mkdir -p $data
 mkdir -p $intermediate
 mkdir -p $results
 
 # Set the correct Python path from your virtual environment
-python py/make_penalized_shap.py --time_series "$1" --ppi "$2" --cell_type "$3"
-
-num_permutations=100
-num_cores=30
-
-# Compile Fortran module.
-#cd py/src-hierarchical-hotnet
-#f2py -c fortran_module.f95 -m fortran_module > /dev/null
-#cd ../..
+python py/make_penalized_shap.py --time_series "$time_series_file" --ppi "$ppi_file" --cell_type "$cell_type" --output_folder "$output_folder"
 
 ################################################################################
 #   Prepare data.
 ################################################################################
 
-network=$(basename "$2" | sed 's/\.[^.]*$//')
+network=$(basename "$ppi_file" | sed 's/\.[^.]*$//')
 mkdir -p $intermediate/"$network"
 
 # Identify available score files
@@ -50,7 +63,7 @@ done
 echo "Construct similarity matrices..."
 
 python py/src-hierarchical-hotnet/construct_similarity_matrix.py \
-    -i   $PWD/data/"$network"_edge_list.tsv \
+    -i   $PWD/"$output_folder"/"$network"_edge_list.tsv \
     -o   $intermediate/"$network"/similarity_matrix.h5 \
     -bof $intermediate/"$network"/beta.txt
 
@@ -60,8 +73,8 @@ python py/src-hierarchical-hotnet/construct_similarity_matrix.py \
 
 echo "Permuting networks..."
 
-cp $PWD/data/"$network"_index_gene.tsv $intermediate/"$network"/index_gene_0.tsv
-cp $PWD/data/"$network"_edge_list.tsv $intermediate/"$network"/edge_list_0.tsv
+cp $PWD/"$output_folder"/"$network"_index_gene.tsv $intermediate/"$network"/index_gene_0.tsv
+cp $PWD/"$output_folder"/"$network"_edge_list.tsv $intermediate/"$network"/edge_list_0.tsv
 
 parallel -u -j $num_cores --bar \
     python py/src-hierarchical-hotnet/permute_network.py \
@@ -86,8 +99,8 @@ do
 
     python py/src-hierarchical-hotnet/find_permutation_bins.py \
         -gsf $intermediate/"$network"_"$score_file"/scores_0.tsv \
-        -igf $PWD/data/"$network"_index_gene.tsv \
-        -elf $PWD/data/"$network"_edge_list.tsv \
+        -igf $PWD/"$output_folder"/"$network"_index_gene.tsv \
+        -elf $PWD/"$output_folder"/"$network"_edge_list.tsv \
         -ms  1000 \
         -o   $intermediate/"$network"_"$score_file"/score_bins.tsv
 
@@ -111,7 +124,7 @@ do
     parallel -u -j $num_cores --bar \
         python py/src-hierarchical-hotnet/construct_hierarchy.py \
             -smf  $intermediate/"$network"/similarity_matrix.h5 \
-            -igf  $PWD/data/"$network"_index_gene.tsv \
+            -igf  $PWD/"$output_folder"/"$network"_index_gene.tsv \
             -gsf  $intermediate/"$network"_"$score_file"/scores_{}.tsv \
             -helf $intermediate/"$network"_"$score_file"/hierarchy_edge_list_{}.tsv \
             -higf $intermediate/"$network"_"$score_file"/hierarchy_index_gene_{}.tsv \
@@ -139,23 +152,10 @@ do
 done
 
 ################################################################################
-#   Perform consensus.
+#   Parse results.
 ################################################################################
 
-echo "Performing consensus..."
-
-python py/src-hierarchical-hotnet/perform_consensus.py \
-    -cf  $(for score_file in "${score_files[@]}"; do echo "$results/clusters_"$network"_"$score_file".tsv"; done) \
-    -igf $(for score_file in "${score_files[@]}"; do echo "$PWD/data/"$network"_index_gene.tsv"; done) \
-    -elf $(for score_file in "${score_files[@]}"; do echo "$PWD/data/"$network"_edge_list.tsv"; done) \
-    -n   $(for score_file in "${score_files[@]}"; do echo "$network"; done) \
-    -s   $(for score_file in "${score_files[@]}"; do echo "$score_file"; done) \
-    -t   2 \
-    -cnf $results/consensus_nodes.tsv \
-    -cef $results/consensus_edges.tsv
-
-### Parse results
-python py/parse_hotnet_results.py --time_series "$1" --results_dir "$results"
+python py/parse_hotnet_results.py --time_series "$time_series_file" --results_dir "$results" --output_folder "$output_folder"
 
 
 end_time=$(date +%s)

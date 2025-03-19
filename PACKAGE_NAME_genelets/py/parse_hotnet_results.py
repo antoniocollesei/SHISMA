@@ -58,6 +58,7 @@ def aggregate_clusters(results_dir, output_file):
 parser = argparse.ArgumentParser(description="Process time-series data with PPI filtering and BORF analysis.")
 parser.add_argument("--time_series", required=True, help="Path to time-series data CSV file")
 parser.add_argument("--results_dir", required=True, help="Path to hierarchical hotnet results directory")
+parser.add_argument("--output_folder", required=True, help="Path to output directory")
 args = parser.parse_args()
 
 # Load data
@@ -79,5 +80,9 @@ X, y_genes, y_cells = data.values[:, np.newaxis, :], enc_genes.transform(genes),
 
 # Results
 results_directory = args.results_dir
-output_file = "aggregated_clusters.tsv"
+output_file = f"{args.output_folder}/aggregated_clusters.tsv"
+
+# Ensure the output directory exists
+os.makedirs(args.output_folder, exist_ok=True)
+print(f"Aggregating clusters from {results_directory} into {output_file}...")
 results = aggregate_clusters(results_directory, output_file)

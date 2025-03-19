@@ -1,2 +1,0 @@
-fasttreeshap
-git+https://github.com/fspinna/borf.git@xai-improvements
