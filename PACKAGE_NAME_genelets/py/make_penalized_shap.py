@@ -56,7 +56,7 @@ clf.fit(X_transformed, y_genes)
 cell_type_indexes = np.where(enc_cells.inverse_transform(y_cells) == args.cell_type)[0]
 
 shap_explainer = fasttreeshap.TreeExplainer(clf, algorithm='auto', n_jobs=-1)
-shap_values = shap_explainer(X_transformed.toarray()[cell_type_indexes], check_additivity=True).values
+shap_values = shap_explainer(X_transformed.toarray()[cell_type_indexes], check_additivity=False).values
 average = np.mean(abs(shap_values), axis=0)
 average_df = pd.DataFrame(average, columns=enc_genes.classes_.astype(str))
 
