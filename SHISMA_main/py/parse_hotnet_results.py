@@ -57,6 +57,7 @@ def aggregate_clusters(results_dir, output_file):
 # Argument parser
 parser = argparse.ArgumentParser(description="Process time-series data with PPI filtering and BORF analysis.")
 parser.add_argument("--time_series", required=True, help="Path to time-series data CSV file")
+parser.add_argument("--cell_type", required=True, help="Chosen cell-type")
 parser.add_argument("--results_dir", required=True, help="Path to hierarchical hotnet results directory")
 parser.add_argument("--output_folder", required=True, help="Path to output directory")
 args = parser.parse_args()
@@ -80,9 +81,50 @@ X, y_genes, y_cells = data.values[:, np.newaxis, :], enc_genes.transform(genes),
 
 # Results
 results_directory = args.results_dir
-output_file = f"{args.output_folder}/aggregated_clusters.tsv"
+output_file = f"{args.output_folder}/aggregated_clusters_{args.output_folder}.tsv"
 
 # Ensure the output directory exists
 os.makedirs(args.output_folder, exist_ok=True)
 print(f"Aggregating clusters from {results_directory} into {output_file}...")
 results = aggregate_clusters(results_directory, output_file)
+
+output_plot_dir = f"{args.output_folder}/plots"
+os.makedirs(output_plot_dir, exist_ok=True)
+print(f"Printing results into {output_plot_dir}...")
+
+# Plotting only significant clusters
+results["P-Value"] = results["P-Value"].astype(float)
+results_filt = results[results["P-Value"] < 0.05]
+
+# For each row of results_filt, find rows of data containing the genes in the cluster and the chosen cell type
+for index, row in results_filt.iterrows():
+  genes = row["Genes"].split(",")
+  genes = [gene.strip() for gene in genes]
+  cell_type = args.cell_type
+  data_filtered = data.loc[data.index.str.split('_').str[0].isin(genes) & (data.index.str.split('_').str[1] == cell_type)]
+  
+  # Calculate mean and standard error for each gene
+  data_filtered_mean = data_filtered.groupby(data_filtered.index.str.split('_').str[0]).mean()
+  data_filtered_sem = data_filtered.groupby(data_filtered.index.str.split('_').str[0]).sem()
+  
+  # Plotting
+  plt.figure(figsize=(10, 6))
+  for gene in data_filtered_mean.index:
+    plt.plot(data_filtered_mean.columns, data_filtered_mean.loc[gene], label=gene)
+    plt.fill_between(
+      data_filtered_mean.columns,
+      data_filtered_mean.loc[gene] - data_filtered_sem.loc[gene],
+      data_filtered_mean.loc[gene] + data_filtered_sem.loc[gene],
+      alpha=0.2
+    )
+  
+  plt.title(f"Cluster: {row['Network']} - Genes: {row['Genes']}")
+  plt.xlabel("Samples")
+  plt.ylabel("Expression (Mean ± SEM)")
+  plt.legend(title="Genes", bbox_to_anchor=(1.05, 1), loc='upper left')
+  plt.tight_layout()
+  
+  # Save the plot
+  plot_file = os.path.join(output_plot_dir, f"cluster_{index}.pdf")
+  plt.savefig(plot_file)
+  plt.close()

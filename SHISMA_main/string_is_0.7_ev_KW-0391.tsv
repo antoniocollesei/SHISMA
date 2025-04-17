@@ -1,4 +1,4 @@
-node1	node2	node1_string_id	node2_string_id	neighborhood_on_chromosome	gene_fusion	phylogenetic_cooccurrence	homology	coexpression	experimentally_determined_interaction	database_annotated	automated_textmining	combined_score
+gene1	gene2	gene1_string_id	gene2_string_id	neighborhood_on_chromosome	gene_fusion	phylogenetic_cooccurrence	homology	coexpression	experimentally_determined_interaction	database_annotated	automated_textmining	combined_score
 ADAR	EIF2AK2	9606.ENSP00000357459	9606.ENSP00000233057	0	0	0	0.562	0.497	0.601	0	0.419	0.873
 ADAR	DHX9	9606.ENSP00000357459	9606.ENSP00000356520	0	0	0	0	0.132	0.446	0	0.852	0.922
 ADAR	MX1	9606.ENSP00000357459	9606.ENSP00000381601	0	0	0	0	0.483	0	0	0.487	0.723

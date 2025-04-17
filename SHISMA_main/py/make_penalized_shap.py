@@ -14,6 +14,7 @@ from fast_borf.pipeline.to_scipy import ToScipySparse
 from fast_borf.xai.mapping import BagOfReceptiveFields
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
+from statsmodels.stats.multitest import multipletests
 plt.style.use('default')
 from constants import CUSTOM_CONFIG_A3, CUSTOM_CONFIG_A3_NO_DILATION, CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_2_3_4
 
@@ -121,70 +122,7 @@ elif penalization_method == 'smash_to_zero_fdr':
   penalization_mask = (p_values_corrected <= penalization_threshold).astype(int)
 
   # Penalize SHAP values
-  shap_values_pval_penalized = abs(average * penalization_mask)
-  shap_values_pval_penalized.columns = enc_genes.classes_.astype(str)
-
-elif penalization_method == 'maxT':
-    def compute_permutation(i):
-        y_genes_perm = np.random.permutation(y_genes)
-        model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
-        shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_jobs)
-        shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
-        shap_importance = np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
-        return shap_importance, np.max(shap_importance, axis=0)
-
-    perm_results = Parallel(n_jobs=num_jobs)(
-        delayed(compute_permutation)(i) for i in range(num_permutations))
-
-    average_perm_list = np.array([res[0] for res in perm_results])
-    max_perm_distribution = np.array([res[1] for res in perm_results])
-
-    # Compute Max-T corrected p-values
-    p_values_corrected = np.mean(max_perm_distribution[:, None] >= average, axis=0)
-
-    # Convert both to DataFrames for shape alignment
-    p_values_corrected_df = pd.DataFrame(1 - p_values_corrected, index=average_df.index, columns=average_df.columns)
-
-    # Compute penalized SHAP values
-    shap_values_pval_penalized = abs(average_df * p_values_corrected_df)
-
-elif penalization_method == 'Westfall-Young':
-  def compute_permutation(i):
-        y_genes_perm = np.random.permutation(y_genes)
-        model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
-        shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_jobs)
-        shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
-        shap_importance = np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
-        return shap_importance, np.max(shap_importance, axis=0)
-
-  perm_results = Parallel(n_jobs=num_jobs)(
-    delayed(compute_permutation)(i) for i in range(num_permutations))
-
-  average_perm_list = np.array([res[0] for res in perm_results])
-  max_perm_distribution = np.array([res[1] for res in perm_results])
-
-  def compute_westfall_young_pvalues(average, average_perm_list):
-      num_permutations = average_perm_list.shape[0]
-      p_values_adjusted = np.zeros(average.shape)
-
-      for i in range(average.shape[0]):  # Loop over each feature
-        for j in range(average.shape[1]):
-            observed = average[i, j]
-            permuted_values = average_perm_list[:, i, j]
-            
-            # Compute adjusted p-value using min-P step-down
-            p_values_adjusted[i, j] = np.sum(permuted_values >= observed) / num_permutations
-
-      return p_values_adjusted
-
-  # Compute Westfall-Young adjusted p-values
-  p_values_corrected = compute_westfall_young_pvalues(average, average_perm_list)
-
-  # Convert to DataFrame
-  p_values_corrected_df = pd.DataFrame(1 - p_values_corrected, index=average_df.index, columns=average_df.columns)
-
-  # Compute penalized SHAP values
-  shap_values_pval_penalized = abs(average_df * p_values_corrected_df)
+  shap_values_pval_penalized = pd.DataFrame(abs(average * penalization_mask), columns=enc_genes.classes_.astype(str))
 
 os.makedirs(args.output_folder, exist_ok=True)
 shap_values_pval_penalized.to_csv(f"{args.output_folder}/shap_values_{args.cell_type}_pvalpenalized.csv", index=False)

@@ -155,7 +155,7 @@ done
 #   Parse results.
 ################################################################################
 
-python py/parse_hotnet_results.py --time_series "$time_series_file" --results_dir "$results" --output_folder "$output_folder"
+python py/parse_hotnet_results.py --time_series "$time_series_file" --cell_type "$cell_type" --results_dir "$results" --output_folder "$output_folder"
 
 
 end_time=$(date +%s)
