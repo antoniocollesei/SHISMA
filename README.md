@@ -2,7 +2,6 @@
 **SHISMA: SHape-driven Inference of Significant celltype-specific Subnetworks from tiMe series single-cell trAnscriptomics**
 
 Authors: Antonio Collesei, Francesco Spinnato, Pierangela Palmerini, Emilia Vigolo  
-Conference: Proceedings of the 20th Conference on Computational Intelligence Methods for Bioinformatics & Biostatistics (CIBB 2025)
 
 ---
 
