@@ -15,14 +15,14 @@ Clone the repository:
 git clone https://github.com/antoniocollesei/SHISMA.git
 cd SHISMA
 ```
-We strongly encourage the installation of requirements via conda/mamba:
+We strongly encourage the installation of requirements via conda/mamba. For this we make the environment .yml file available:
 ```bash
 conda env create -f conda/environment.yml
 conda activate SHISMA_env
 ```
 
 ## Usage
-
+The dataset with time series observations must be a tab-separated csv file, with index names in the form of [gene]_[celltype]. Note: we will improve this in an upcoming release to allow for a more user-friendly input file.
 ```bash
 ./wrapper.sh --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm <num_permutations>] [--cores <num_cores>]
 ```
@@ -38,13 +38,3 @@ List of significant subnetworks for the selected cell type.
 Each subnetwork includes:
 - A local shape (temporal pattern) signature.
 - A p-value corrected for multiple testing (FWER controlled).
-
-## Working Example
-```bash
-./wrapper.sh --data ../tests/random_data_test/random_data.csv \
-             --ppi ../tests/random_data_test/random_ppi.csv \
-             --ct Bcell \
-             --out results_bcells \
-             --nperm 100 \
-             --cores 16
-```
