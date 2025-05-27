@@ -1,5 +1,6 @@
 #!/bin/bash
 # Usage: ./wrapper.sh --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> --nperm <num_permutations> --cores <num_cores>
+# Example: ./wrapper.sh --data ../tests/same_distribution_test/gene1_gene2_Fakecells.csv --ppi ../tests/same_distribution_test/gene1_gene2_Fakecells_ppi.csv --ct Fakecells --out test_bonferroni_same_distribution_better
 
 # Set default values
 default_num_permutations=100
@@ -39,7 +40,7 @@ mkdir -p $intermediate
 mkdir -p $results
 
 # Set the correct Python path from your virtual environment
-python py/make_penalized_shap.py --time_series "$time_series_file" --ppi "$ppi_file" --cell_type "$cell_type" --output_folder "$output_folder" --num_permutations "$num_permutations" --num_cores "$num_cores"
+python py/make_penalized_shap_mod.py --time_series "$time_series_file" --ppi "$ppi_file" --cell_type "$cell_type" --output_folder "$output_folder" --num_permutations "$num_permutations" --num_cores "$num_cores"
 
 ################################################################################
 #   Prepare data.

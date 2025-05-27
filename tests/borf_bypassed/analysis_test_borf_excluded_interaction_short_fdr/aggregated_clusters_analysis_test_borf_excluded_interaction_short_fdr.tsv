@@ -1,0 +1,8 @@
+Network	Shapelet Number	P-Value	Genes
+string_interactions_short	0	0.24	CFD,COLEC11
+string_interactions_short	4	0.32	CD8B2,LILRB3
+string_interactions_short	2	0.48	CD274,CD84,CTLA4,IL2RA
+string_interactions_short	2	0.48	IFIT2,IFIT3
+string_interactions_short	5	0.53	CD1A,CTLA4
+string_interactions_short	3	0.55	CFH,COLEC11
+string_interactions_short	1	0.63	CASP4,COLEC11,LILRB3

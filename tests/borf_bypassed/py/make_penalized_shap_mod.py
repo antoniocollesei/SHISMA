@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 import pandas as pd
+import scipy.sparse
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
 from joblib import Parallel, delayed
@@ -49,34 +50,36 @@ enc_cells.fit(cells)
 X, y_genes, y_cells = data.values[:, np.newaxis, :], enc_genes.transform(genes), enc_cells.transform(cells)
 
 # BORF setup
-builder = BorfBuilder(n_jobs=-2, configs=CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_2_3_4,
+builder = BorfBuilder(n_jobs=args.num_cores, configs=CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_2_3_4,
     pipeline_objects=[(ReshapeTo2D, dict(keep_unraveled_index=True)), (ZeroColumnsRemover, dict(axis=0)), (ToScipySparse, dict())])
 borf = builder.build(X)
 X_transformed = borf.fit_transform(X)
 
+data = scipy.sparse.csr_matrix(data.values)
+
 clf = DecisionTreeClassifier()
-clf.fit(X_transformed, y_genes)
+clf.fit(data, y_genes)
 cell_type_indexes = np.where(enc_cells.inverse_transform(y_cells) == args.cell_type)[0]
 
 num_permutations, num_cores = args.num_permutations, args.num_cores
 
 shap_explainer = fasttreeshap.TreeExplainer(clf, algorithm='auto', n_jobs=num_cores)
-shap_values = shap_explainer(X_transformed.toarray()[cell_type_indexes], check_additivity=False).values
+shap_values = shap_explainer(data.toarray()[cell_type_indexes], check_additivity=False).values
 average = np.mean(abs(shap_values), axis=0)
 average_df = pd.DataFrame(average, columns=enc_genes.classes_.astype(str))
 
-X_transformed_arr = X_transformed.toarray()[cell_type_indexes]
+X_arr = data.toarray()[cell_type_indexes]
 
-penalization_method = 'smash_to_zero_bonferroni'  # 'permutation' or 'maxT' or 'Westfall-Young'
+penalization_method = 'smash_to_zero_fdr'  # 'permutation' or 'maxT' or 'Westfall-Young'
 
 # Permutation testing
 if penalization_method == 'permutation':
   
   def compute_permutation(i):
     y_genes_perm = np.random.permutation(y_genes)
-    model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
+    model = DecisionTreeClassifier().fit(data, y_genes_perm)
     shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_cores)
-    shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
+    shap_values_perm = shap_explainer(X_arr, check_additivity=False).values
     return np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
 
   average_perm_list = np.array(Parallel(n_jobs=num_cores)(delayed(compute_permutation)(i) for i in range(num_permutations)))
@@ -92,9 +95,9 @@ elif penalization_method == 'smash_to_zero_bonferroni':
 
   def compute_permutation(i):
     y_genes_perm = np.random.permutation(y_genes)
-    model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
+    model = DecisionTreeClassifier().fit(data, y_genes_perm)
     shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_cores)
-    shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
+    shap_values_perm = shap_explainer(X_arr, check_additivity=False).values
     return np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
 
   average_perm_list = np.array(Parallel(n_jobs=num_cores)(delayed(compute_permutation)(i) for i in range(num_permutations)))
@@ -110,9 +113,9 @@ elif penalization_method == 'smash_to_zero_fdr':
 
   def compute_permutation(i):
     y_genes_perm = np.random.permutation(y_genes)
-    model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
+    model = DecisionTreeClassifier().fit(data, y_genes_perm)
     shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_cores)
-    shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
+    shap_values_perm = shap_explainer(X_arr, check_additivity=False).values
     return np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
 
   average_perm_list = np.array(Parallel(n_jobs=num_cores)(delayed(compute_permutation)(i) for i in range(num_permutations)))
@@ -159,18 +162,5 @@ edge_list.to_csv(f"{args.output_folder}/{network_name}_edge_list.tsv", header=Fa
 
 index2gene = pd.Series(data=genes, index=range(len(genes)))
 index2gene.to_csv(f"{args.output_folder}/{network_name}_index_gene.tsv", header=False, sep="\t")
-
-# Export mappings
-mapper = BagOfReceptiveFields(borf)
-mapper.build(X)
-
-# Create a PDF file
-with PdfPages(f"{args.output_folder}/mappings.pdf") as pdf:
-  for i in range(average.shape[0]):
-    plt.figure()
-    plt.plot(mapper[i].word_array, marker="o")
-    plt.title(f'Shapelet number {i}')
-    pdf.savefig()  # Save the current figure into the PDF
-    plt.close()  # Close the figure to free memory
 
 print("Processing complete.")
