@@ -1,3 +1,5 @@
+import logging
+logging.getLogger().setLevel(logging.ERROR)
 import os
 import argparse
 import numpy as np
@@ -24,6 +26,8 @@ parser.add_argument("--time_series", required=True, help="Path to time-series da
 parser.add_argument("--ppi", required=True, help="Path to PPI data TSV file")
 parser.add_argument("--cell_type", required=True, help="Cell type to analyze")
 parser.add_argument("--output_folder", required=True, help="Output folder to store analysis results")
+parser.add_argument("--penalization_method", required=True, choices=['bonferroni', 'fdr'], help="Method for penalization: 'bonferroni' or 'fdr'")
+parser.add_argument("--penalization_threshold", type=float, default=0.05, help="Significance threshold for penalization")
 parser.add_argument("--num_permutations", type=int, default=100, help="Number of permutations for significance testing")
 parser.add_argument("--num_cores", type=int, default=-1, help="Number of parallel jobs to run")
 args = parser.parse_args()
@@ -67,26 +71,12 @@ average_df = pd.DataFrame(average, columns=enc_genes.classes_.astype(str))
 
 X_transformed_arr = X_transformed.toarray()[cell_type_indexes]
 
-penalization_method = 'smash_to_zero_bonferroni'  # 'permutation' or 'maxT' or 'Westfall-Young'
+penalization_method = args.penalization_method  # 'permutation' or 'maxT' or 'Westfall-Young'
 
-# Permutation testing
-if penalization_method == 'permutation':
+# Permutation testing with MHT correction
+if penalization_method == 'bonferroni':
   
-  def compute_permutation(i):
-    y_genes_perm = np.random.permutation(y_genes)
-    model = DecisionTreeClassifier().fit(X_transformed, y_genes_perm)
-    shap_explainer = fasttreeshap.TreeExplainer(model, algorithm='auto', n_jobs=num_cores)
-    shap_values_perm = shap_explainer(X_transformed_arr, check_additivity=False).values
-    return np.einsum('ijk->jk', np.abs(shap_values_perm)) / shap_values_perm.shape[0]
-
-  average_perm_list = np.array(Parallel(n_jobs=num_cores)(delayed(compute_permutation)(i) for i in range(num_permutations)))
-  p_values = pd.DataFrame(np.mean(average_perm_list >= average, axis=0))
-  shap_values_pval_penalized = abs(average * (pd.DataFrame(1-p_values)))
-  shap_values_pval_penalized.columns = enc_genes.classes_.astype(str)
-
-elif penalization_method == 'smash_to_zero_bonferroni':
-  
-  penalization_threshold = 0.05
+  penalization_threshold = args.penalization_threshold  # Original significance level
   num_features = average.shape[1]  # Number of features (genes)
   bonferroni_threshold = penalization_threshold / num_features  # Adjusted threshold
 
@@ -103,9 +93,9 @@ elif penalization_method == 'smash_to_zero_bonferroni':
   shap_values_pval_penalized = abs(average * penalization_mask)
   shap_values_pval_penalized.columns = enc_genes.classes_.astype(str)
 
-elif penalization_method == 'smash_to_zero_fdr':
+elif penalization_method == 'fdr':
   
-  penalization_threshold = 0.05  # Original significance level
+  penalization_threshold = args.penalization_threshold  # Original significance level
   num_features = average.shape[1]  # Number of features (genes)
 
   def compute_permutation(i):

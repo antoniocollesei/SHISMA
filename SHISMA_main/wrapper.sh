@@ -4,6 +4,8 @@
 # Set default values
 default_num_permutations=100
 default_num_cores=16
+default_penalization_method="bonferroni"
+default_penalization_threshold=0.05
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -11,6 +13,8 @@ while [[ "$#" -gt 0 ]]; do
     --ppi) ppi_file="$2"; shift 2 ;;
     --ct) cell_type="$2"; shift 2 ;;
     --out) output_name="$2"; shift 2 ;;
+    --mht) penalization_method="$2"; shift 2 ;;
+    --alpha) penalization_threshold="$2"; shift 2 ;;
     --nperm) num_permutations="$2"; shift 2 ;;
     --cores) num_cores="$2"; shift 2 ;;
     *) echo "Unknown parameter passed: $1"; exit 1 ;;
@@ -20,9 +24,11 @@ done
 # Apply default values if not provided
 num_permutations="${num_permutations:-$default_num_permutations}"
 num_cores="${num_cores:-$default_num_cores}"
+penalization_method="${penalization_method:-$default_penalization_method}"
+penalization_threshold="${penalization_threshold:-$default_penalization_threshold}"
 
 if [[ -z "$time_series_file" || -z "$ppi_file" || -z "$cell_type" || -z "$output_name" ]]; then
-  echo "Usage: $0 --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm <num_permutations>] [--cores <num_cores>]"
+  echo "Usage: $0 --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--mht <penalization_method>] [--alpha <penalization_threshold>] [--nperm <num_permutations>] [--cores <num_cores>]"
   exit 1
 fi
 
@@ -39,7 +45,15 @@ mkdir -p $intermediate
 mkdir -p $results
 
 # Set the correct Python path from your virtual environment
-python py/make_penalized_shap.py --time_series "$time_series_file" --ppi "$ppi_file" --cell_type "$cell_type" --output_folder "$output_folder" --num_permutations "$num_permutations" --num_cores "$num_cores"
+python py/make_penalized_shap.py \
+    --time_series "$time_series_file" \
+    --ppi "$ppi_file" \
+    --cell_type "$cell_type" \
+    --output_folder "$output_folder" \
+    --penalization_method "$penalization_method" \
+    --penalization_threshold "$penalization_threshold" \
+    --num_permutations "$num_permutations" \
+    --num_cores "$num_cores"
 
 ################################################################################
 #   Prepare data.
@@ -139,24 +153,31 @@ echo "Processing hierarchies..."
 
 for score_file in "${score_files[@]}"
 do
-    python py/src-hierarchical-hotnet/process_hierarchies.py \
-        -oelf $intermediate/"$network"_"$score_file"/hierarchy_edge_list_0.tsv \
-        -oigf $intermediate/"$network"_"$score_file"/hierarchy_index_gene_0.tsv \
-        -pelf $(for i in $(seq $num_permutations); do echo "$intermediate/"$network"_"$score_file"/hierarchy_edge_list_"$i".tsv"; done) \
-        -pigf $(for i in $(seq $num_permutations); do echo "$intermediate/"$network"_"$score_file"/hierarchy_index_gene_"$i".tsv"; done) \
-        -lsb  1 \
-        -cf   $results/clusters_"$network"_"$score_file".tsv \
-        -pl   $network $score_file \
-        -pf   $results/sizes_"$network"_"$score_file".pdf \
-        -nc   $num_cores
+    target_file="$intermediate/${network}_${score_file}/hierarchy_edge_list_0.tsv"
+
+    if [[ -f "$target_file" ]]; then
+        
+        python py/src-hierarchical-hotnet/process_hierarchies.py \
+            -oelf "$intermediate/${network}_${score_file}/hierarchy_edge_list_0.tsv" \
+            -oigf "$intermediate/${network}_${score_file}/hierarchy_index_gene_0.tsv" \
+            -pelf $(for i in $(seq $num_permutations); do echo "$intermediate/${network}_${score_file}/hierarchy_edge_list_${i}.tsv"; done) \
+            -pigf $(for i in $(seq $num_permutations); do echo "$intermediate/${network}_${score_file}/hierarchy_index_gene_${i}.tsv"; done) \
+            -lsb  1 \
+            -cf   "$results/clusters_${network}_${score_file}.tsv" \
+            -pl   "$network" "$score_file" \
+            -pf   "$results/sizes_${network}_${score_file}.pdf" \
+            -nc   "$num_cores"
+    else
+        echo "Skipping $score_file because hierarchy not being evaluated for this shape."
+    fi
 done
+
 
 ################################################################################
 #   Parse results.
 ################################################################################
 
 python py/parse_hotnet_results.py --time_series "$time_series_file" --cell_type "$cell_type" --results_dir "$results" --output_folder "$output_folder"
-
 
 end_time=$(date +%s)
 elapsed_time=$((end_time - start_time))
