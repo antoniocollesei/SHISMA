@@ -1,0 +1,3 @@
+Network	Shapelet Number	P-Value	Genes
+samples1000_time6_ppi	29	0.3	gene10,gene12
+samples1000_time6_ppi	0	0.55	gene0,gene5

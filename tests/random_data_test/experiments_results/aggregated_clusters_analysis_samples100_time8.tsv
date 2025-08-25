@@ -1,0 +1,6 @@
+Network	Shapelet Number	P-Value	Genes
+samples100_time8_ppi	40	0.22	gene8,gene9
+samples100_time8_ppi	12	0.3	gene17,gene5
+samples100_time8_ppi	8	0.47	gene0,gene15,gene9
+samples100_time8_ppi	30	0.75	gene0,gene7
+samples100_time8_ppi	32	0.92	gene10,gene11,gene19
