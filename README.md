@@ -28,9 +28,9 @@ The dataset with time series observations must be a tab-separated csv file, with
 ```
 
 ## Inputs
-Time Series File (--data): Normalized expression matrix of genes across time points.
-PPI File (--ppi): Edge list representing a biological interaction network; it must be a tab-separated file with two columns having names "gene1" and "gene2".
-Cell Type (--ct): Specific cell type to focus the analysis on: please be sure that the exact name is present in the index of your data file.
+Time Series File (--data): Normalized expression matrix of genes across time points. \\
+PPI File (--ppi): Edge list representing a biological interaction network; it must be a tab-separated file with two columns having names "gene1" and "gene2". \\
+Cell Type (--ct): Specific cell type to focus the analysis on: please be sure that the exact name is present in the index of your data file.\\
 Output Name (--out): Prefix for all generated output files.
 
 ## Outputs
