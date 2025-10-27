@@ -3,8 +3,8 @@
 
 # Set default values
 default_num_permutations=100
-default_num_cores=16
-default_penalization_method="bonferroni"
+default_num_cores=1
+default_penalization_method="fdr"
 default_penalization_threshold=0.05
 
 while [[ "$#" -gt 0 ]]; do
