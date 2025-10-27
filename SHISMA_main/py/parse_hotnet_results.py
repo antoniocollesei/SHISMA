@@ -9,7 +9,8 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler, FunctionTransfor
 
 def aggregate_clusters(results_dir, output_file):
     aggregated_data = []
-    
+    min_subnetwork_size = 3  # Exclude single-gene subnetworks and couples
+
     # Find all cluster result files
     cluster_files = glob.glob(os.path.join(results_dir, "clusters_*.tsv"))
     
@@ -39,7 +40,7 @@ def aggregate_clusters(results_dir, output_file):
         # Read clusters, excluding single-gene subnetworks
         for line in lines[cluster_start + 1:]:
             genes = line.strip().split("\t")
-            if len(genes) > 1:  # Exclude single-gene subnetworks
+            if len(genes) >= min_subnetwork_size:
                 aggregated_data.append([network, score_number, p_value, ",".join(genes)])
     
     # Create DataFrame
@@ -47,9 +48,10 @@ def aggregate_clusters(results_dir, output_file):
     
     # Sort by p-value (ascending order)
     df = df.sort_values(by="P-Value")
+    df.reset_index(drop=True, inplace=True)
     
     # Save aggregated results
-    df.to_csv(output_file, sep="\t", index=False)
+    df.to_csv(output_file, sep="\t", index=True)
     print(f"Aggregated results saved to {output_file}")
     
     return df
@@ -118,9 +120,9 @@ for index, row in results_filt.iterrows():
       alpha=0.2
     )
   
-  plt.title(f"Cluster: {row['Network']} - Genes: {row['Genes']}")
+  plt.title(f"Cluster: {row['Network']}")
   plt.xlabel("Samples")
-  plt.ylabel("Expression (Mean ± SEM)")
+  plt.ylabel("Mean Expression (within cell type)")
   plt.legend(title="Genes", bbox_to_anchor=(1.05, 1), loc='upper left')
   plt.tight_layout()
   

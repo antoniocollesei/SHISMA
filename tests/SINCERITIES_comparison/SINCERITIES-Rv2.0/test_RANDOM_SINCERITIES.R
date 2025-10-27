@@ -10,14 +10,7 @@ library(cvTools)
 
 # *** Data loading ***
 uploading <- dget("SINCERITIES functions/uploading.R")
-DATA <- uploading("THP1 data/THP1_single_cell_data_RANDOM.csv")
-data <- read.csv("THP1 data/THP1_single_cell_data_EXCEL_no6_24_72_96.csv", header = TRUE)
-data <- data[1:480, ]
-# substitute all data[,-1] with random data from 0 to max(data[,-1])
-data[, 1:45] <- matrix(sample(0:max(data[, 1:45]), 480 * dim(data)[2], replace = TRUE), nrow = 480)
-
-# export to csv
-write.csv(data, "THP1 data/THP1_single_cell_data_RANDOM.csv", row.names = FALSE, quote = FALSE)
+DATA <- uploading("THP1_single_cell_data_RANDOM.csv")
 
 # *** SINCERITIES ***
 
@@ -64,7 +57,7 @@ if (!is.na(NDidx)) {
 # Final ranked list
 adj_matrix <- adj_matrix / max(adj_matrix)
 final_ranked_predictions <- dget("SINCERITIES functions/final_ranked_predictions.R")
-table <- final_ranked_predictions(adj_matrix, DATA$genes, SIGN = 0, fileNAME = "prediction4THP1", saveFile = TRUE)
+table <- final_ranked_predictions(adj_matrix, DATA$genes, SIGN = 0, fileNAME = "prediction4THP1_RANDOM", saveFile = TRUE)
 
 # AUROC (x=fpr/1-specifity; y=recall/sensitivity) and AUPR (x=recall y=precision)
 # Auto-regulatory edges are removed for AUROC and AUPR evaluation since
