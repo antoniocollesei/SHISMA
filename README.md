@@ -42,3 +42,6 @@ Results are grouped in a folder called `analysis_<output_name>`. The folder cont
 - a TSV file with the list of significant subnetworks for the selected cell type (`aggregated_clusters.tsv`);
 - a PDF reference to match the temporal patterns with the ones indexed in the TSV file;
 - a subfolder with the temporal dynamics of genes in the significant subnetworks.
+
+## License and Contact
+This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](). We welcome your feedback and contributions!
