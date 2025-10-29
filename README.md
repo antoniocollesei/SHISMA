@@ -7,7 +7,7 @@ Authors: Antonio Collesei, Pierangela Palmerini, Emilia Vigolo, Francesco Spinna
 
 ## Overview
 **SHISMA** is a novel algorithm designed to infer statistically significant, cell type-specific subnetworks from time-series single-cell RNA-seq data.  
-It combines time series pattern mining (Bag-of-Receptive-Fields) with graph algorithms on Protein-Protein Interaction (PPI) networks, ensuring high statistical rigor through Family-Wise Error Rate (FWER) correction.
+It combines time series pattern mining (Bag-of-Receptive-Fields) with graph algorithms on Protein-Protein Interaction (PPI) networks, ensuring high statistical rigor through Family-Wise Error Rate (FWER) correction. We provide a processed dataset of real world data in the **Releases** section (the one described in the paper), available for download at this [link](https://github.com/antoniocollesei/SHISMA/releases/tag/v1.0-data).
 
 ## Installation
 Clone the repository:
@@ -44,4 +44,4 @@ Results are grouped in a folder called `analysis_<output_name>`. The folder cont
 - a subfolder with the temporal dynamics of genes in the significant subnetworks.
 
 ## License and Contact
-This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](). We welcome your feedback and contributions!
+This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](mailto:antonio.collesei@iov.veneto.it). We welcome your feedback and contributions!
