@@ -2,8 +2,8 @@
 library(LEAP)
 library(dplyr)
 
-data <- read.csv("../../SHISMA_main/temporal_data_with_patient_ready_normalized_full_genes.csv")
-data_safe <- data
+path_real_data <- "temporal_data_with_patient_ready_normalized_full_genes.csv"
+data <- read.csv(path_real_data)
 
 # keep rows that contain Bcells in rownames
 data <- data[grep("Bcells", data$gene_patient_celltype), ]
