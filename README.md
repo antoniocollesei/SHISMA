@@ -26,9 +26,9 @@ Here we describe how the input dataset must be formatted. Anyway, we share a wra
 | gene_patient_celltype | time0 | time1 | time2 | time3
 | :--- | :--- | :--- | :--- | :--- |
 | TP53_patientAC_Bcell | 0.8 | 0.1 | 0.04 | 0 |
-| ASGR1_patientFS_Ionocyte, | 0.3 | 0.04 | 0.2 | 0 |
-| BRCA1_patientPP_Tcell, | 0 | 0.5 | 0.6 | 0.9 |
-| MYC_patientEV_Dendritic, | 0.7 | 0 | 0 | 0.1 |
+| ASGR1_patientFS_Ionocyte | 0.3 | 0.04 | 0.2 | 0 |
+| BRCA1_patientPP_Tcell | 0 | 0.5 | 0.6 | 0.9 |
+| MYC_patientEV_Dendritic | 0.7 | 0 | 0 | 0.1 |
 
 If you prefer to try our data, we provide a real-world dataset (the one described in the paper) in the **Releases** section, also available for download at this [link](https://github.com/antoniocollesei/SHISMA/releases/tag/v1.0-data).
 
