@@ -8,8 +8,7 @@ Authors: Antonio Collesei, Pierangela Palmerini, Emilia Vigolo, Francesco Spinna
 
 ## Overview
 **SHISMA** is a novel algorithm designed to infer statistically significant, cell type-specific subnetworks from time-series single-cell RNA-seq data.  
-It combines time series pattern mining (Bag-of-Receptive-Fields) with graph algorithms on Protein-Protein Interaction (PPI) networks, ensuring high statistical rigor through Family-Wise Error Rate (FWER) correction. We provide a processed dataset of real world data in the **Releases** section (the one described in the paper), available for download at this [link](https://github.com/antoniocollesei/SHISMA/releases/tag/v1.0-data).
-
+It combines time series pattern mining (Bag-of-Receptive-Fields) with graph algorithms on Protein-Protein Interaction (PPI) networks, ensuring high statistical rigor through Family-Wise Error Rate (FWER) correction.
 ## Installation
 Clone the repository:
 ```bash
@@ -21,6 +20,17 @@ We strongly encourage the installation of requirements via conda/mamba. For this
 conda env create -f conda/SHISMA_environment.yml
 conda activate SHISMA_env
 ```
+
+## Time Series Data Formatting
+Here we describe how the input dataset must be formatted. Anyway, we share a wrapper named `proprocess.R` that builds the dataset automatically, starting from Seurat RDS objects labeled with a progressively numbered timepoint. Each object must be equipped with two metadata: *patient_id* and *cell_type*. The final dataset should look like this:
+| gene_patient_celltype, | time0, | time1, |
+| :--- | :--- | :--- |
+| TP53_patientAC_Bcell, | 0.5, | 0.1, |
+| ASGR1_patientFS_Ionocyte, | 0.3, | 0.04, |
+| ASGR1_patientPP_Tcell, | 0, | 0.5, |
+| ASGR1_patientEV_Dendritic, | 0.7, | 0, |
+
+If you prefer to try our data, we provide a real-world dataset (the one described in the paper) in the **Releases** section, also available for download at this [link](https://github.com/antoniocollesei/SHISMA/releases/tag/v1.0-data).
 
 ## Inputs
 - Time Series File (`--data`): Normalized expression matrix of genes across time points. It must be a tab-separated csv file, with the first column representing the index names in the form of [gene]_[celltype]. Note: we will improve this in an upcoming release to allow for a more user-friendly input file.
