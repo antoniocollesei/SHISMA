@@ -9,16 +9,18 @@ Authors: Antonio Collesei, Pierangela Palmerini, Emilia Vigolo, Francesco Spinna
 ## Overview
 **SHISMA** is a novel algorithm designed to infer statistically significant, cell type-specific subnetworks from time-series single-cell RNA-seq data.  
 It combines time series pattern mining (Bag-of-Receptive-Fields) with graph algorithms on Protein-Protein Interaction (PPI) networks, ensuring high statistical rigor through Family-Wise Error Rate (FWER) correction.
+
 ## Installation
 Clone the repository:
 ```bash
 git clone https://github.com/antoniocollesei/SHISMA.git
 cd SHISMA
 ```
-We strongly encourage the installation of requirements via conda/mamba. For this we make the environment .yml file available:
+We strongly encourage the installation of requirements via conda/mamba. For this we make the `SHISMA_environment.yml` file available. Since [**BoRF**](https://github.com/fspinna/borf) is not available under any conda channel, it must be installed via pip. The following snippet presents the environment creation step by step.
 ```bash
 conda env create -f conda/SHISMA_environment.yml
 conda activate SHISMA_env
+pip install git+https://github.com/fspinna/borf.git@xai-improvements
 ```
 
 ## Time Series Data Formatting
@@ -47,6 +49,7 @@ Here is a snippet showing the standard use of SHISMA. In brackets, optional para
 ```bash
 ./wrapper.sh --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm 100] [--mht fdr] [--alpha 0.05] [--cores 1]
 ```
+**Warning**: While running the script, some warnings might appear (*IPython could not be loaded.*), depending on the OS you are running. They do not harm the pipeline. We are currently trying to make them disappear in every iteration, since they may be annoying.
 
 ## Outputs
 Results are grouped in a folder called `analysis_<output_name>`. The folder contains:
