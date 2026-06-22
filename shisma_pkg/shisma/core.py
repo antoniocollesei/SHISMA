@@ -13,7 +13,7 @@ from fast_borf import BorfBuilder
 from fast_borf.pipeline.zero_columns_remover import ZeroColumnsRemover
 from fast_borf.pipeline.reshaper import ReshapeTo2D
 from fast_borf.pipeline.to_scipy import ToScipySparse
-from .constants import CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_2_3_4
+from .parameters import BORF_CONFIG
 
 def _process_single_pattern(idx, X_dense_ct_slice, df_X):
     """Worker function optimized to safely handle zero-variance noise and variable SHAP shapes."""
@@ -63,8 +63,8 @@ def compute_borf_and_shap(df_synth, ppi_synth, target_ct):
 
     print(f"\n2. Running BORF Transformation for {target_ct}...")
     builder = BorfBuilder(
-        n_jobs=-1, 
-        configs=CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_2_3_4,
+        n_jobs=n_jobs, 
+        configs=BORF_CONFIG,
         pipeline_objects=[
             (ReshapeTo2D, dict(keep_unraveled_index=True)), 
             (ZeroColumnsRemover, dict(axis=0)), 
@@ -83,7 +83,7 @@ def compute_borf_and_shap(df_synth, ppi_synth, target_ct):
     df_X = pd.get_dummies(genes_ct, dtype=int)
 
     print("Running Decision Trees and SHAP extraction in parallel via joblib...")
-    results = Parallel(n_jobs=-1)(
+    results = Parallel(n_jobs=n_jobs)(
         delayed(_process_single_pattern)(idx, X_dense_ct[:, idx], df_X) 
         for idx in range(X_dense_ct.shape[1])
     )
@@ -93,18 +93,18 @@ def compute_borf_and_shap(df_synth, ppi_synth, target_ct):
     print("SHAP feature attribution complete!")
     return shap_df
 
-def resolve_overlapping_subnetworks(df, overlap_thresh=0.5, strategy='largest'):
+def resolve_overlapping_subnetworks(df, overlap_thresh=0.5, strategy='largest', mht='fdr'):
     """Removes redundant subnetwork modules based on the Overlap Coefficient (Cell 13)."""
     if df.empty: return df
     resolved_rows = []
     
     for pattern, group in df.groupby('Pattern'):
         if strategy == 'largest':
-            group = group.sort_values(by=['Size', 'Q_Value_FDR'], ascending=[False, True])
+            group = group.sort_values(by=['Size', 'Q_Value_' + mht.upper()], ascending=[False, True])
         elif strategy == 'significant':
-            group = group.sort_values(by=['Q_Value_FDR', 'Size'], ascending=[True, False])
+            group = group.sort_values(by=['Q_Value_' + mht.upper(), 'Size'], ascending=[True, False])
         elif strategy == 'optimal_core':
-            group = group.sort_values(by=['Q_Value_FDR', 'Size'], ascending=[True, True])
+            group = group.sort_values(by=['Q_Value_' + mht.upper(), 'Size'], ascending=[True, True])
             
         accepted_clusters = []
         for _, row in group.iterrows():
@@ -174,7 +174,7 @@ def filter_by_cell_specificity(resolved_df, cell_expr_df, cell_metadata, target_
     return final_specific_df
 
 def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, max_size=30, 
-                        n_perms=1000, thresholds=(50, 70, 80, 90, 95, 99), j_eps=0.01, alpha=0.05):
+                        n_perms=1000, thresholds=(50, 70, 80, 90, 95, 99), j_eps=0.01, alpha=0.05, mht='fdr', n_jobs=-1):
     """Runs the complete, synchronized end-to-end SHISMA processing configuration."""
     
     if not isinstance(df_synth.index, pd.MultiIndex):
@@ -249,7 +249,12 @@ def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, ma
             p_values.append(emp_p)
             cluster_data.append({'Size': len(comp), 'Median_Score': obs_score, 'Genes': comp})
 
-        reject, q_values, _, _ = multipletests(p_values, alpha=alpha, method='fdr_bh')
+        if mht == 'fdr':
+            reject, q_values, _, _ = multipletests(p_values, alpha=alpha, method='fdr_bh')
+        elif mht == 'bonferroni':
+             reject, q_values, _, _ = multipletests(p_values, alpha=alpha, method='bonferroni')
+        else:
+            raise ValueError(f"Unsupported multiple hypothesis testing method: {mht}")
 
         for i, cluster in enumerate(cluster_data):
             if reject[i]:
@@ -258,14 +263,14 @@ def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, ma
                     'Size': cluster['Size'],
                     'Median_Score': cluster['Median_Score'],
                     'P_Value': p_values[i],
-                    'Q_Value_FDR': q_values[i],
+                    'Q_Value_' + mht.upper(): q_values[i],
                     'Genes': ", ".join(cluster['Genes'])
                 })
 
-    final_results_df = pd.DataFrame(significant_subnetworks) if significant_subnetworks else pd.DataFrame(columns=['Pattern', 'Size', 'Median_Score', 'P_Value', 'Q_Value_FDR', 'Genes'])
+    final_results_df = pd.DataFrame(significant_subnetworks) if significant_subnetworks else pd.DataFrame(columns=['Pattern', 'Size', 'Median_Score', 'P_Value', 'Q_Value_' + mht.upper(), 'Genes'])
 
     print("\nApplying Post-Processing Overlap Filtering...")
-    filtered_results_df = resolve_overlapping_subnetworks(final_results_df, overlap_thresh=0.5, strategy='largest')
+    filtered_results_df = resolve_overlapping_subnetworks(final_results_df, overlap_thresh=0.5, strategy='largest', mht=mht)
 
     print("Formatting metadata objects for cell specificity checks...")
     mean_expr = df_backup.mean(axis=1)
