@@ -57,11 +57,11 @@ def generate_shisma_data(n_genes=200, n_planted=0, n_timepoints=6, n_pats=5, n_c
     return df_synth, ppi_df, [], target_ct
 
 if __name__ == "__main__":
-    sample_sizes = [100, 500, 1000]
-    timepoints_list = [6, 8, 10]
-    patients_list = [5, 10]
+    sample_sizes = [100, 500, 1000, 5000]
+    timepoints_list = [6, 10, 15]
+    patients_list = [5, 10, 15]
 
-    os.makedirs("random_data", exist_ok=True)
+    os.makedirs("data", exist_ok=True)
 
     for n_samples in sample_sizes:
         for n_timepoints in timepoints_list:
@@ -69,15 +69,16 @@ if __name__ == "__main__":
                 print(f"Generating: genes={n_samples}, timepoints={n_timepoints}, patients={n_pats}")
                 
                 prefix = f"samples{n_samples}_time{n_timepoints}_pats{n_pats}"
-                
+                n_planted = n_samples / 10
+
                 # Forced n_planted=0 here to match the strict null constraint
                 df_synth, ppi_synth, target_genes, target_ct = generate_shisma_data(
                     n_genes=n_samples, 
-                    n_planted=0, 
+                    n_planted=n_planted, 
                     n_timepoints=n_timepoints, 
                     n_pats=n_pats,        
                     n_celltypes=5
                 )
                 
-                df_synth.to_csv(f"random_data/{prefix}_expression.csv")
-                ppi_synth.to_csv(f"random_data/{prefix}_ppi.csv", index=False)
+                df_synth.to_csv(f"data/{prefix}_expression.csv")
+                ppi_synth.to_csv(f"data/{prefix}_ppi.csv", index=False)

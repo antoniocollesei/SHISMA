@@ -1,0 +1,2 @@
+python create_random_data.py
+python run_SHISMA_random_data.py
