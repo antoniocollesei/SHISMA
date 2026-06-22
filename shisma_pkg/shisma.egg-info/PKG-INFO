@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: shisma
+Version: 1.0.0
+Summary: Shape-driven Inference of Significant celltype-specific Subnetworks
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: networkx
+Requires-Dist: statsmodels
+Requires-Dist: scikit-learn
+Requires-Dist: fasttreeshap
+Requires-Dist: scipy
+Requires-Dist: joblib
+Dynamic: requires-dist
+Dynamic: summary

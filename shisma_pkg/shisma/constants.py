@@ -73,6 +73,14 @@ CUSTOM_CONFIG_A3 = [
 
 CUSTOM_CONFIG_A3_NO_DILATION = [i for i in CUSTOM_CONFIG_A3 if i["dilation"] == 1]
 
+CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_3 = [
+    i for i in CUSTOM_CONFIG_A3_NO_DILATION if i["window_size"] in [3] and i["word_length"] in [3]
+]
+
+CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_3_4_5 = [
+    i for i in CUSTOM_CONFIG_A3_NO_DILATION if i["window_size"] in [3, 4, 5] and i["word_length"] in [3, 4, 5]
+]
+
 CUSTOM_CONFIG_A3_NO_DILATION_WINDOW_SIZE_2_3_4 = [
-    i for i in CUSTOM_CONFIG_A3_NO_DILATION if i["window_size"] in [2, 3, 4]
+    i for i in CUSTOM_CONFIG_A3_NO_DILATION if i["window_size"] in [2, 3, 4] and i["word_length"] in [2, 3, 4]
 ]

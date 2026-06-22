@@ -1,0 +1,2 @@
+[console_scripts]
+shisma = shisma.cli:main
