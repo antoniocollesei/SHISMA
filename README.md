@@ -3,7 +3,6 @@
 
 Authors: Antonio Collesei, Pierangela Palmerini, Emilia Vigolo, Francesco Spinnato 
 
----
 ![SHISMA Workflow Sketch](SHISMA_sketch_horizontal.png)
 
 ## Overview
@@ -14,7 +13,7 @@ It combines time series pattern mining (Bag-of-Receptive-Fields) with graph algo
 Clone the repository:
 ```bash
 git clone https://github.com/antoniocollesei/SHISMA.git
-cd SHISMA
+cd SHISMA/shisma_pkg
 ```
 We strongly encourage the installation of requirements via conda/mamba. For this we make the `SHISMA_environment.yml` file available. Since [**BoRF**](https://github.com/fspinna/borf) is not available under any conda channel, it must be installed via pip. The following snippet presents the environment creation step by step.
 ```bash
@@ -22,9 +21,14 @@ conda env create -f conda/SHISMA_environment.yml
 conda activate SHISMA_env
 pip install git+https://github.com/fspinna/borf.git@xai-improvements
 ```
+Now, we are ready to install the actual SHISMA package via setup.
+```bash
+pip install -e .
+```
+Finally, we can run `shisma` directly from command line.
 
 ## Time Series Data Formatting
-Here we describe how the input dataset must be formatted. Anyway, we share a wrapper named `proprocess.R` that builds the dataset automatically, starting from Seurat RDS objects labeled with a progressively numbered timepoint. Each object must be equipped with two metadata: *patient_id* and *cell_type*. The final dataset should look like this:
+Here we describe how the input dataset must be formatted. Anyway, we share a R-based wrapper named `preprocess.R` that builds the dataset automatically, starting from Seurat RDS objects labeled with a progressively numbered timepoint. Each object must be equipped with two metadata: *patient_id* and *cell_type*. The final dataset should look like this:
 | gene_patient_celltype | time0 | time1 | time2 | time3
 | :--- | :--- | :--- | :--- | :--- |
 | TP53_patientAC_Bcell | 0.8 | 0.1 | 0.04 | 0 |
@@ -32,7 +36,7 @@ Here we describe how the input dataset must be formatted. Anyway, we share a wra
 | BRCA1_patientPP_Tcell | 0 | 0.5 | 0.6 | 0.9 |
 | MYC_patientEV_Dendritic | 0.7 | 0 | 0 | 0.1 |
 
-If you prefer to try our data, we provide a real-world dataset (the one described in the paper) in the **Releases** section, also available for download at this [link](https://github.com/antoniocollesei/SHISMA/releases/tag/v1.0-data).
+If you prefer to try our data, we provide a real-world dataset (the one described in the paper) in the **Releases** section, also available for download at this [link](https://github.com/antoniocollesei/SHISMA/releases/tag/v1.0-data). We suggest downloading it and then move it to the `/data` folder, where two PPIs are available (the reactome one is what we showed in the paper).
 
 ## Inputs
 - Time Series File (`--data`): Normalized expression matrix of genes across time points. It must be a tab-separated csv file, with the first column representing the index names in the form of [gene]_[celltype]. Note: we will improve this in an upcoming release to allow for a more user-friendly input file.
@@ -47,15 +51,9 @@ If you prefer to try our data, we provide a real-world dataset (the one describe
 ## Usage
 Here is a snippet showing the standard use of SHISMA. In brackets, optional parameters can be added, if standard ones are not satisfactory. 
 ```bash
-./wrapper.sh --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm 100] [--mht fdr] [--alpha 0.05] [--cores 1]
+shisma --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm 100] [--mht fdr] [--alpha 0.05] [--cores -1]
 ```
 **Warning**: While running the script, some warnings might appear (*IPython could not be loaded.*), depending on the OS you are running. They do not harm the pipeline. We are currently trying to make them disappear in every iteration, since they may be annoying.
-
-## Outputs
-Results are grouped in a folder called `analysis_<output_name>`. The folder contains:
-- a TSV file with the list of significant subnetworks for the selected cell type (`aggregated_clusters.tsv`);
-- a PDF reference to match the temporal patterns with the ones indexed in the TSV file;
-- a subfolder with the temporal dynamics of genes in the significant subnetworks.
 
 ## License and Contact
 This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](mailto:antonio.collesei@iov.veneto.it). We welcome your feedback and contributions!
