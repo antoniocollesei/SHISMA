@@ -4,7 +4,7 @@
 Authors: Antonio Collesei, Pierangela Palmerini, Emilia Vigolo, Francesco Spinnato 
 
 ---
-![SHISMA Workflow Sketch](SHISMA_sketch_horizontal.PNG)
+![SHISMA Workflow Sketch](SHISMA_sketch_horizontal.png)
 
 ## Overview
 **SHISMA** is a novel algorithm designed to infer statistically significant, cell type-specific subnetworks from time-series single-cell RNA-seq data.  
