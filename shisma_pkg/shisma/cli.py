@@ -1,7 +1,10 @@
 import argparse
 import os
+import warnings
 import pandas as pd
 from .core import run_shisma_pipeline
+
+warnings.filterwarnings('ignore')
 
 def main():
     parser = argparse.ArgumentParser(description="SHISMA CLI: Fully Aligned End-to-End Execution Pipeline")
