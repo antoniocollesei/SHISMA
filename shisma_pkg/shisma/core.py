@@ -42,7 +42,7 @@ def _process_single_pattern(idx, X_dense_ct_slice, df_X):
         
     return idx, mean_maxpos_shap
 
-def compute_borf_and_shap(df_synth, ppi_synth, target_ct):
+def compute_borf_and_shap(df_synth, ppi_synth, target_ct, n_jobs=-1):
     """Transforms raw/normalized expression data using the exact notebook preprocessing and BoRF pipelines."""
     print("1. Filtering for PPI genes & Handling Replicates...")
     ppi_genes = np.unique(ppi_synth[['gene1', 'gene2']].values.astype(str))
@@ -91,7 +91,7 @@ def compute_borf_and_shap(df_synth, ppi_synth, target_ct):
     shap_dict = {idx: array for idx, array in results}
     shap_df = pd.DataFrame(shap_dict, index=df_X.columns)
     print("SHAP feature attribution complete!")
-    return shap_df
+    return shap_df, borf_model, X_raw
 
 def resolve_overlapping_subnetworks(df, overlap_thresh=0.5, strategy='largest', mht='fdr'):
     """Removes redundant subnetwork modules based on the Overlap Coefficient (Cell 13)."""
@@ -174,7 +174,7 @@ def filter_by_cell_specificity(resolved_df, cell_expr_df, cell_metadata, target_
     return final_specific_df
 
 def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, max_size=30, 
-                        n_perms=1000, thresholds=(50, 70, 80, 90, 95, 99), j_eps=0.01, alpha=0.05, mht='fdr', n_jobs=-1):
+                        n_perms=1000, thresholds=(50, 70, 80, 90, 95, 99), j_eps=0.01, alpha=0.05, mht='fdr', n_jobs=-1, plot=False, plot_dir=None):
     """Runs the complete, synchronized end-to-end SHISMA processing configuration."""
     
     if not isinstance(df_synth.index, pd.MultiIndex):
@@ -184,7 +184,7 @@ def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, ma
 
     df_backup = df_synth.copy()
     
-    shap_df = compute_borf_and_shap(df_synth, ppi_synth, target_ct)
+    shap_df, borf_model, X_raw = compute_borf_and_shap(df_synth, ppi_synth, target_ct, n_jobs=n_jobs)
 
     G = nx.from_pandas_edgelist(ppi_synth, 'gene1', 'gene2')
     nodes = list(G.nodes())
@@ -302,4 +302,12 @@ def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, ma
     }, 
     inplace=True)
     
+    if plot:
+        from .plotting import plot_dynamics
+        if plot_dir is None:
+            import os
+            plot_dir = os.path.join("plots", target_ct)
+        print(f"Generating dynamics plots in {plot_dir}...")
+        plot_dynamics(cell_specific_df, df_backup, borf_model, X_raw, target_ct, plot_dir)
+        
     return cell_specific_df

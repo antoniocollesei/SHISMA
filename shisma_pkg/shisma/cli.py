@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--alpha", type=float, default=0.05, help="BH FDR Q-value cutoff constraint threshold")
     parser.add_argument("--mht", default="fdr", help="FWER correction method for multiple hypothesis testing (e.g., 'fdr', 'bonferroni')")
     parser.add_argument("--thresholds", type=int, nargs='+', default=[50, 70, 80, 90, 95, 99], help="Percentile array targets")
+    parser.add_argument("--plot", action="store_true", help="Generate result plots for significant subnetworks")
 
     args = parser.parse_args()
 
@@ -31,6 +32,14 @@ def main():
     if '\t' in open(args.ppi).readline():
         ppi_df = pd.read_csv(args.ppi, sep='\t')
     
+    plot_dir = None
+    if args.plot:
+        out_dir = os.path.dirname(args.out)
+        if out_dir:
+            plot_dir = os.path.join(out_dir, "plots")
+        else:
+            plot_dir = "plots"
+
     results_df = run_shisma_pipeline(
         df_synth=df_expr,
         ppi_synth=ppi_df,
@@ -43,7 +52,9 @@ def main():
         j_eps=args.j_eps,
         alpha=args.alpha,
         mht=args.mht,
-        n_jobs=args.cores
+        n_jobs=args.cores,
+        plot=args.plot,
+        plot_dir=plot_dir
     )
 
     print("\n" + "="*70 + "\nExecution Complete! Final Significant Targets Summary:\n" + "="*70)
