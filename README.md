@@ -3,7 +3,7 @@
 
 Authors: Antonio Collesei, Pierangela Palmerini, Emilia Vigolo, Francesco Spinnato 
 
-![SHISMA Workflow Sketch](SHISMA_sketch_horizontal.png)
+![SHISMA Workflow Sketch](fig/SHISMA_sketch_horizontal.png)
 
 ## Overview
 **SHISMA** is a novel algorithm designed to infer statistically significant, cell type-specific subnetworks from time-series single-cell RNA-seq data.  
@@ -54,6 +54,16 @@ Here is a snippet showing the standard use of SHISMA. In brackets, optional para
 shisma --data <time_series_file> --ppi <ppi_file> --ct <cell_type> --out <output_name> [--nperm 100] [--mht fdr] [--alpha 0.05] [--cores -1]
 ```
 **Warning**: While running the script, some warnings might appear (*IPython could not be loaded.*), depending on the OS you are running. They do not harm the pipeline. We are currently trying to make them disappear in every iteration, since they may be annoying.
+
+## Outputs
+The results are presented in tabular form, offering the following details. Below an example for a Bcell analysis, with Bonferroni as FWER correction method.
+| Subnetwork_id | Pattern | Size | Pvalue_fdr | Genes | Pvalue_specificity_Bcell
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 0 | 66 | 6 | 0.0019 | RNF111, UBC, UBE2D1, UBE2D2, UBE2N, ZNRF2 | 0.0006 |
+| 1 | 30 | 5 | 0.0023 | LAMTOR1, LAMTOR2, LAMTOR3, MLST8, MTOR | 0.004 |
+
+A plot showing the gene dynamics across the patients' cohort is also available for any significant result.
+![SHISMA Workflow Sketch](results/plots/plots_bonferroni/Bcells/Subnetwork_0_Pattern_66.png)
 
 ## License and Contact
 This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](mailto:antonio.collesei@iov.veneto.it). We welcome your feedback and contributions!
