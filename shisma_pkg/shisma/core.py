@@ -291,5 +291,15 @@ def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, ma
         p_val_thresh=0.05,
         min_fc=1.2
     )
+
+    # Filter final results to include only the columns of interest
+    cell_specific_df = cell_specific_df[['Pattern', 'Size', 'Q_Value_' + mht.upper(), 'Genes', 'Specificity_P_Val']]
+
+    # Rename columns for clarity
+    cell_specific_df.rename(columns={
+        'Q_Value_' + mht.upper(): 'Pvalue_' + mht.upper(),
+        'Specificity_P_Val': target_ct + '_Specificity_Pvalue'
+    }, 
+    inplace=True)
     
     return cell_specific_df
