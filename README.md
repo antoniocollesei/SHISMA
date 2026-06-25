@@ -51,7 +51,7 @@ If you prefer to try our data, we provide a real-world dataset (the one describe
 ## Usage
 Here is a snippet showing the standard use of SHISMA. In brackets, optional parameters can be added, if standard ones are not satisfactory. 
 ```bash
-shisma --data <time_series_file> --ppi <ppi_file> --ct <celltype> --out <output_name> [--nperm 100] [--mht fdr] [--alpha 0.05] [--cores -1]
+shisma --expr-matrix <time_series_matrix_file> --ppi-network <ppi_file> --target-ct <celltype> --output-dir <output_name> [--nperms 1000] [--mht-correction fdr] [--alpha 0.05] [--n-jobs -1]
 ```
 **Warning**: While running the script, some warnings might appear (*IPython could not be loaded.*), depending on the OS you are running. They do not harm the pipeline. We are currently trying to make them disappear in every iteration, since they may be annoying.
 
@@ -63,7 +63,7 @@ The results are presented in tabular form, offering the following details. Below
 | 1 | 30 | 5 | 0.0023 | LAMTOR1, LAMTOR2, LAMTOR3, MLST8, MTOR | 0.004 |
 
 A plot showing the gene dynamics across the patients' cohort is also available for any significant result.
-![SHISMA Workflow Sketch](results/plots/plots_bonferroni/Bcells/Subnetwork_0_Pattern_66.png)
+![SHISMA Example Results](results/plots/plots_bonferroni/Bcells/Subnetwork_0_Pattern_66.png)
 
 ## License and Contact
 This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](mailto:antonio.collesei@iov.veneto.it). We welcome your feedback and contributions!
