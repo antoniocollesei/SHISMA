@@ -48,6 +48,33 @@ If you prefer to try our data, we provide a real-world dataset (the one describe
 - Significance Threshold (`--alpha`): The default value is 0.05, so you do not really want to touch this parameter.
 - Cores (`--n-jobs`): Cores to be employed for the analysis. Default is all available cores (-1).
 
+Additionally, if you want to modify BoRF default parameters, for example adjusting the window size to reduce/extend the search space, you can modify the `shisma_pkg/shisma/borf_configuration.py` file. This is the standard configuration set we used for our experiments, with an increasing window_size and word_length from 2 to 4, and an alphabet_size of 3 (low, medium, high).
+```python
+BORF_CONFIG = [
+    {
+        "window_size": 2,
+        "stride": 1,
+        "dilation": 1,
+        "word_length": 2,
+        "alphabet_size": 3,
+    },
+    {
+        "window_size": 3,
+        "stride": 1,
+        "dilation": 1,
+        "word_length": 3,
+        "alphabet_size": 3,
+    },
+    {
+        "window_size": 4,
+        "stride": 1,
+        "dilation": 1,
+        "word_length": 4,
+        "alphabet_size": 3,
+    }
+]
+```
+
 ## Usage
 Here is a snippet showing the standard use of SHISMA. In brackets, optional parameters can be added, if standard ones are not satisfactory. 
 ```bash
@@ -66,4 +93,4 @@ A plot showing the gene dynamics across the patients' cohort is also available f
 ![SHISMA Example Results](results/plots/plots_bonferroni/Bcells/Subnetwork_0_Pattern_66.png)
 
 ## License and Contact
-This code is provided under the MIT license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](mailto:antonio.collesei@iov.veneto.it). We welcome your feedback and contributions!
+This code is provided under the GNU GPL v3 license. For any inquiries, feel free to reach out to the authors at: [antonio.collesei@iov.veneto.it](mailto:antonio.collesei@iov.veneto.it) or open an issue here on GitHub. We welcome your feedback and contributions!
