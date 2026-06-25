@@ -93,7 +93,7 @@ def compute_borf_and_shap(df_synth, ppi_synth, target_ct, n_jobs=-1):
     print("SHAP feature attribution complete!")
     return shap_df, borf_model, X_raw
 
-def resolve_overlapping_subnetworks(df, overlap_thresh=0.5, strategy='largest', mht='fdr'):
+def resolve_overlapping_subnetworks(df, overlap_thresh=0.7, strategy='largest', mht='fdr'):
     """Removes redundant subnetwork modules based on the Overlap Coefficient (Cell 13)."""
     if df.empty: return df
     resolved_rows = []
@@ -270,7 +270,7 @@ def run_shisma_pipeline(df_synth, ppi_synth, target_ct, beta=0.1, min_size=3, ma
     final_results_df = pd.DataFrame(significant_subnetworks) if significant_subnetworks else pd.DataFrame(columns=['Pattern', 'Size', 'Median_Score', 'P_Value', 'Q_Value_' + mht.upper(), 'Genes'])
 
     print("\nApplying Post-Processing Overlap Filtering...")
-    filtered_results_df = resolve_overlapping_subnetworks(final_results_df, overlap_thresh=0.5, strategy='largest', mht=mht)
+    filtered_results_df = resolve_overlapping_subnetworks(final_results_df, overlap_thresh=0.7, strategy='largest', mht=mht)
 
     print("Formatting metadata objects for cell specificity checks...")
     mean_expr = df_backup.mean(axis=1)

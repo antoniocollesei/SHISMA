@@ -35,13 +35,11 @@ def main():
     if '\t' in open(args.ppi).readline():
         ppi_df = pd.read_csv(args.ppi, sep='\t')
     
+    #os.makedirs(args.out, exist_ok=True)
     plot_dir = None
     if args.plot:
-        out_dir = os.path.dirname(args.out)
-        if out_dir:
-            plot_dir = os.path.join(out_dir, "plots")
-        else:
-            plot_dir = "plots"
+        plot_dir = os.path.join(args.out, "plots")
+        os.makedirs(plot_dir, exist_ok=True)
 
     results_df = run_shisma_pipeline(
         df_synth=df_expr,
@@ -63,9 +61,9 @@ def main():
     print("\n" + "="*70 + "\nExecution Complete! Final Significant Targets Summary:\n" + "="*70)
     if not results_df.empty:
         print(results_df.to_string(index=False))
-        os.makedirs(os.path.dirname(args.out) if os.path.dirname(args.out) else '.', exist_ok=True)
-        results_df.to_csv(args.out, index=True)
-        print(f"\nSaved curated outputs to target destination: {args.out}")
+        csv_path = os.path.join(args.out, f"{args.ct}_results_{args.mht}.csv")
+        results_df.to_csv(csv_path, index=False)
+        print(f"\nSaved curated outputs to target destination: {csv_path}")
     else:
         print("No modules passed the full pipeline filters.")
 
