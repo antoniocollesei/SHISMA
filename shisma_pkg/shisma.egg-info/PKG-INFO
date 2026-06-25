@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: shisma
+Version: 1.0.0
+Summary: Subnetwork Analysis via Bag-of-Receptive-Fields (BORF) and SHAP
+Author: Bioinformatics Engineer
+Requires-Python: >=3.8
+Dynamic: author
+Dynamic: requires-python
+Dynamic: summary
