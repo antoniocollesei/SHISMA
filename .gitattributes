@@ -1,1 +1,2 @@
 data/temporal_data_with_patient_ready_normalized_full_genes.csv filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
