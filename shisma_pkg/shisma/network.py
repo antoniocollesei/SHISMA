@@ -31,7 +31,8 @@ class NetworkExtractor:
         return self.beta * np.linalg.inv(I - (1 - self.beta) * W)
 
     def extract_subnetworks(self, shap_df, threshold_sweep=[50, 70, 80, 90, 95, 99], 
-                            min_size=3, max_size=30, n_perms=1000, overlap_thresh=0.5):
+                            min_size=3, max_size=30, n_perms=1000, overlap_thresh=0.5,
+                            mht_correction='fdr', alpha=0.05):
         significant_modules = []
         A_binary = nx.to_numpy_array(self.G, nodelist=self.nodes, weight=None)
 
@@ -75,7 +76,14 @@ class NetworkExtractor:
                 p_values.append(emp_p)
                 cluster_data.append({'Size': len(comp), 'Median_Score': obs_score, 'Genes': comp})
 
-            reject, q_values, _, _ = multipletests(p_values, alpha=0.05, method='fdr_bh')
+            if mht_correction == 'fdr':
+                reject, q_values, _, _ = multipletests(p_values, alpha=alpha, method='fdr_bh')
+            if mht_correction == 'bonferroni':
+                reject, q_values, _, _ = multipletests(p_values, alpha=alpha, method='bonferroni')
+            else:
+                print(f"  Warning: Unknown multiple hypothesis correction method '{mht_correction}'. Defaulting to FDR.")
+                reject, q_values, _, _ = multipletests(p_values, alpha=alpha, method='fdr_bh')
+
             passed_count = 0
             for i, cluster in enumerate(cluster_data):
                 if reject[i]:
@@ -84,7 +92,7 @@ class NetworkExtractor:
                     significant_modules.append({
                         'Pattern': pattern_name, 'Size': cluster['Size'],
                         'Median_Score': cluster['Median_Score'], 'P_Value': p_values[i],
-                        'Q_Value_FDR': q_values[i], 'Genes': ", ".join(cluster['Genes'])
+                        'P_Value_adj': q_values[i], 'Genes': ", ".join(cluster['Genes'])
                     })
             if passed_count == 0:
                 print("  ❌ No candidate subnetworks survived FDR correction.")
@@ -97,7 +105,7 @@ class NetworkExtractor:
         if df.empty: return df
         resolved_rows = []
         for pattern, group in df.groupby('Pattern'):
-            group = group.sort_values(by=['Q_Value_FDR', 'Size'], ascending=[True, False])
+            group = group.sort_values(by=['P_Value_adj', 'Size'], ascending=[True, False])
             accepted_clusters = []
             for _, row in group.iterrows():
                 current_genes = set(row['Genes'].split(', '))
